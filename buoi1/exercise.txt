@@ -1,0 +1,33 @@
+-- 1.tạo 1 thủ tục để thục Pro_Salary để xét thưởng cuối năm như sau :
+-- Nếu nv làm trên >=9 thưởng lương 12tr
+--                 >=6               8tr
+--                 >=4               6tr
+--                 còn lại           5tr
+
+DELIMITER $$
+create procedure Pro_Salary()
+begin
+select employee_id, hire_date, salary , Timestampdiff(year, hire_date,now()) as 'so nam lam viec',
+ case
+  when Timestampdiff(year, hire_date,now()) >= 9 then salary + 12000
+  when Timestampdiff(year, hire_date,now()) >= 6 then salary + 80000
+  when Timestampdiff(year, hire_date,now()) >= 4 then salary + 60000
+  else salary + 5000
+ end as thuong 
+ from dbquanlynhansu.employees;
+end; $$
+-- call procedure
+call Pro_Salary
+
+-- 2.ProSearch_name (Firstname)
+-- sau đó cho hiển thị toàn bộ Nvieen đó
+-- trong đó nối Fullname , Firstname +lastname
+
+DELIMITER $$
+create procedure ProSearch_name (in firstname varchar(20))
+begin
+select  employee_id,first_name,last_name, email, concat(first_name,' ',last_name) as fullname from dbquanlynhansu.employees 
+where first_name like concat('%',firstname,'%') ;
+end; $$
+
+call ProSearch_name('Steven')
