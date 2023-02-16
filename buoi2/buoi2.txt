@@ -1,0 +1,55 @@
+-- tạo 1 trigger cho bảng employees khi thực hiện insert dữ liệu vào bảng employees thì kiểm tra xem email người đó nhập vào có đúng định dạng hay không
+-- ( yêu cầu email phải có dạng: firtname.lastname@sqltutorial.org )
+-- nếu không đúng thì thông báo message email không đúng định dạng
+-- ngược lại thì cho phép insert dữ liệu vào bảng employees 
+-- )
+
+DELIMITER $$
+create trigger checkEmail_Format
+before insert on employees
+for each row
+begin
+     declare format_email varchar(20);
+	 set format_email = concat(new.first_name,".",new.last_name,"@sqltutorial.org ");
+	 if new.email != format_email then 
+	 signal sqlstate  '45000'
+	 set MESSAGE_TEXT = 'Email không đúng định dạng';
+	 end if;
+    
+end; $$
+
+
+-- tạo 1 trigger cho bảng countries khi thực hiện cập nhật dữ liệu vào bảng countries thì kiểm tra xem region_id có tồn tại trong bảng regions
+-- nếu tồn tại thì cho phép cập nhật dữ liệu vào bảng countries
+-- ngược lại thì thông báo message regions_id không tồn tại
+
+delimiter $$
+create trigger `Update_Countries`
+before update on countries
+for each row
+begin
+   declare id_region varchar (11);
+   set id_region = (select region_id from regions where region_id = new.region_id) ;
+   if id_region not in (select region_id from regions where region_id = new.region_id) then
+   signal sqlstate '45000'
+   set MESSAGE_TEXT = 'region_id not exist';
+   end if;
+end; $$
+
+
+-- tạo 1 sự kiện mỗi tháng xóa các khu vực có số lượng nhân viên nhỏ hơn 10
+create event if not exists `delete_duplicate_region`
+on schedule every 1 month
+starts current_timestamp
+ends current_timestamp + interval 1 month
+do
+     DELETE FROM regions WHERE region_id IN (
+        SELECT region_id FROM employees GROUP BY region_id HAVING COUNT(*) < 10
+    );
+
+-- tạo 1 sự kiện mỗi tháng  xóa những nhân viên làm việc < 30 năm giới hạn xóa 1 bản ghi trong mỗi tháng
+create event if not exists `delete_employes`
+on schedule every 1 month
+do
+ delete from dbquanlynhansu.employees where Timestampdiff(year,hire_date, now()) >30 limit 1;
+
